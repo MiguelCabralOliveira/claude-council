@@ -65,7 +65,7 @@ export function Composer({
             "disabled:cursor-not-allowed disabled:border-foreground/20 disabled:bg-foreground/20 disabled:text-foreground/40",
           )}
         >
-          Convene
+          Start
         </button>
         {running && (
           <button

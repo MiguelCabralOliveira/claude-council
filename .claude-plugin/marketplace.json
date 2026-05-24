@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-council",
+  "description": "Multi-participant adversarial debate inside Claude Code — spawn your skills and commands as personas, run rebuttals, get a verdict.",
+  "owner": {
+    "name": "Miguel Cabral Oliveira"
+  },
+  "plugins": [
+    {
+      "name": "council",
+      "description": "Run a structured debate between any Claude Code skills/commands acting as personas. The skill spawns one subagent per participant, runs opening positions in parallel, identifies real clashes via a neutral facilitator, runs rebuttal rounds, and delivers a verdict.",
+      "category": "productivity",
+      "source": "./plugins/council",
+      "homepage": "https://github.com/MiguelCabralOliveira/claude-council"
+    }
+  ]
+}

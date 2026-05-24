@@ -1,0 +1,9 @@
+{
+  "name": "council",
+  "version": "0.1.0",
+  "description": "Spawn Claude Code skills and commands as personas and run a structured multi-round debate with rebuttals and a verdict.",
+  "author": {
+    "name": "Miguel Cabral Oliveira"
+  },
+  "homepage": "https://github.com/MiguelCabralOliveira/claude-council"
+}

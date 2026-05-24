@@ -43,7 +43,7 @@ export function Transcript({ items, personaMap }: Props) {
     return (
       <div className="flex h-full items-center justify-center border border-dashed border-foreground/10 py-32">
         <p className="text-[13px] text-[var(--color-muted-foreground)]">
-          Pick at least two participants, write a proposal, and convene.
+          Pick at least two participants, write a proposal, and start.
         </p>
       </div>
     )
