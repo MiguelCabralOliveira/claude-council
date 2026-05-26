@@ -17,18 +17,20 @@ If anything is missing, ask once with `AskUserQuestion`, then proceed.
 
 ## Step 1 — Locate each participant
 
-For each name, find the persona definition by checking these paths in order and stopping at the first hit:
+Run the bundled discovery script **once** at the start of the council to build a name → path index covering every persona on the machine (current project, user-level `~/.claude/`, installed plugin marketplaces, and other `.claude/` dirs found under `$HOME`).
 
-1. `<cwd>/.claude/commands/<name>.md`
-2. `<cwd>/.claude/skills/<name>/SKILL.md`
-3. `~/.claude/commands/<name>.md`
-4. `~/.claude/skills/<name>/SKILL.md`
-5. `~/.claude/plugins/marketplaces/*/plugins/*/commands/<name>.md`
-6. `~/.claude/plugins/marketplaces/*/plugins/*/skills/<name>/SKILL.md`
+The script lives next to this `SKILL.md` file. Run it via the Bash tool. Both of these resolve to the same place — use whichever is reachable in your environment:
 
-Read the file with the Read tool. The frontmatter `description` plus the body is the persona's instruction set.
+- Plugin install:  `"${CLAUDE_PLUGIN_ROOT}/skills/council/scripts/discover-personas.sh"`
+- Standalone user skill: `"$HOME/.claude/skills/council/scripts/discover-personas.sh"`
 
-If a name resolves to nothing, tell the user and skip it. Don't fabricate a persona.
+It prints a JSON object `{ "<name>": "<absolute path>", ... }`. Parse it.
+
+For each requested participant, look up its name in that index. Then read the file with the Read tool — the frontmatter `description` plus the body is the persona's instruction set.
+
+Precedence (later wins on duplicate names): plugin marketplaces → other project `.claude/` dirs → user `~/.claude/` → current project `<cwd>/.claude/`.
+
+If a name resolves to nothing, tell the user (mention the discovery script didn't find it) and skip it. Don't fabricate a persona.
 
 ## Step 2 — Opening round (parallel)
 

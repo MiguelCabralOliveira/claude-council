@@ -48,9 +48,22 @@ function safeReaddir(dir: string): fs.Dirent[] {
 
 type Raw = Omit<Persona, "initials">
 
+function statIsFile(p: string): boolean {
+  try { return fs.statSync(p).isFile() } catch { return false }
+}
+
+function statIsDirectory(p: string): boolean {
+  try { return fs.statSync(p).isDirectory() } catch { return false }
+}
+
 function collectFlatCommands(dir: string, origin: Origin): Raw[] {
   return safeReaddir(dir)
-    .filter(d => resolvedIs(dir, d, "file") && d.name.endsWith(".md") && d.name !== SELF)
+    .filter(d => {
+      if (!d.name.endsWith(".md") || d.name === SELF) return false
+      if (d.isFile()) return true
+      if (d.isSymbolicLink()) return statIsFile(path.join(dir, d.name))
+      return false
+    })
     .map(d => {
       const id = d.name.replace(".md", "")
       const fm = readFrontmatter(path.join(dir, d.name))
@@ -65,23 +78,11 @@ function collectFlatCommands(dir: string, origin: Origin): Raw[] {
     })
 }
 
-function resolvedIs(dir: string, d: fs.Dirent, kind: "file" | "dir"): boolean {
-  if (kind === "file" && d.isFile()) return true
-  if (kind === "dir" && d.isDirectory()) return true
-  if (!d.isSymbolicLink()) return false
-  try {
-    const s = fs.statSync(path.join(dir, d.name))
-    return kind === "file" ? s.isFile() : s.isDirectory()
-  } catch {
-    return false
-  }
-}
-
 function collectSkillBundles(dir: string, origin: Origin): Raw[] {
   const out: Raw[] = []
   for (const d of safeReaddir(dir)) {
-    if (!resolvedIs(dir, d, "dir")) continue
     const bundleDir = path.join(dir, d.name)
+    if (!d.isDirectory() && !(d.isSymbolicLink() && statIsDirectory(bundleDir))) continue
     const skillPath = path.join(bundleDir, "SKILL.md")
     if (!fs.existsSync(skillPath)) continue
     const fm = readFrontmatter(skillPath)
@@ -113,14 +114,51 @@ function collectPluginEntries(home: string): Raw[] {
   return out
 }
 
+const SKIP_DIRS = new Set([
+  "node_modules", ".git", "Library", ".Trash", ".cache", ".npm", ".vscode",
+  ".next", "dist", "build", ".claude",
+])
+
+function findOtherClaudeDirs(home: string, projectDir: string, maxDepth = 4): string[] {
+  const found: string[] = []
+  const seen = new Set<string>([
+    path.join(home, ".claude"),
+    path.join(projectDir, ".claude"),
+  ])
+  function walk(dir: string, depth: number) {
+    if (depth > maxDepth) return
+    for (const d of safeReaddir(dir)) {
+      if (!d.isDirectory() || d.name.startsWith(".")) {
+        if (d.isDirectory() && d.name === ".claude") {
+          const full = path.join(dir, d.name)
+          if (!seen.has(full)) { seen.add(full); found.push(full) }
+        }
+        continue
+      }
+      if (SKIP_DIRS.has(d.name)) continue
+      walk(path.join(dir, d.name), depth + 1)
+    }
+  }
+  walk(home, 1)
+  return found
+}
+
 export function discoverPersonas(projectDir: string = process.cwd()): Persona[] {
   const home = os.homedir()
+  const otherClaudeDirs = findOtherClaudeDirs(home, projectDir)
+  const otherProjectEntries: Raw[] = []
+  for (const claudeDir of otherClaudeDirs) {
+    otherProjectEntries.push(...collectFlatCommands(path.join(claudeDir, "commands"), "other-project"))
+    otherProjectEntries.push(...collectSkillBundles(path.join(claudeDir, "skills"), "other-project"))
+  }
+
   const raws = [
     ...collectFlatCommands(path.join(projectDir, ".claude", "commands"), "project"),
     ...collectSkillBundles(path.join(projectDir, ".claude", "skills"), "project"),
     ...collectFlatCommands(path.join(home, ".claude", "commands"), "user"),
     ...collectSkillBundles(path.join(home, ".claude", "skills"), "user"),
     ...collectPluginEntries(home),
+    ...otherProjectEntries,
   ]
 
   const seen = new Set<string>()

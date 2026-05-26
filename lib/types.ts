@@ -1,4 +1,4 @@
-export type Origin = "project" | "user" | `plugin:${string}`
+export type Origin = "project" | "user" | "other-project" | `plugin:${string}`
 
 export type Position = "FOR" | "AGAINST" | "CONDITIONAL"
 
